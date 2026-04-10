@@ -1,93 +1,99 @@
 import streamlit as st
-import math
 
-# 1. Sayfa Temelleri
-st.set_page_config(page_title="İsmail Orhan Sağlık Paneli", page_icon="🧬", layout="wide")
+# 1. Sayfa Ayarları (Mobil uyum için geniş mod)
+st.set_page_config(page_title="İsmail Orhan Sağlık Paneli", page_icon="🧬", layout="centered")
 
-# 2. Sidebar: Tüm Girişleri Buraya Topladık (Ekran Karışmasın Diye)
+# --- TÜM GİRİŞLERİ YAN MENÜYE ALDIK (EKRAN KARIŞMASIN DİYE) ---
 with st.sidebar:
-    st.header("👤 Kullanıcı Bilgileri")
+    st.header("👤 Kişisel Bilgiler")
     cinsiyet = st.selectbox("Cinsiyet", ["Erkek", "Kadın"])
-    yas = st.number_input("Yaş", min_value=15, max_value=90, value=31)
-    boy = st.number_input("Boy (cm)", min_value=120, max_value=230, value=178)
-    kilo = st.number_input("Kilo (kg)", min_value=40.0, max_value=200.0, value=80.0)
+    yas = st.number_input("Yaş", 15, 90, 31)
+    boy = st.number_input("Boy (cm)", 120, 230, 178)
+    kilo = st.number_input("Kilo (kg)", 40.0, 200.0, 80.0)
     
     st.divider()
-    st.header("📏 Ölçümler (Opsiyonel)")
-    bel = st.number_input("Bel Çevresi (cm)", value=85)
-    boyun = st.number_input("Boyun Çevresi (cm)", value=40)
-    
-    st.divider()
-    st.header("🎯 Hedef & Aktivite")
-    hedef = st.selectbox("Hedefiniz", ["Yağ Yakımı", "Form Koruma", "Kas Kütlesi (Bulk)"])
-    aktivite = st.selectbox("Aktivite Seviyesi", ["Hareketsiz", "Az Hareketli", "Orta Hareketli", "Çok Hareketli", "Profesyonel"])
-    
+    st.header("🎯 Hedef ve Hareket")
+    hedef = st.selectbox("Hedefiniz", ["Yağ Yakımı", "Form Koruma", "Kas Kütlesi Artışı"])
+    aktivite = st.selectbox("Günlük Aktivite", 
+                            ["Masa Başı / Hareketsiz", "Az Hareketli (Haftada 1-3 gün spor)", 
+                             "Orta Hareketli (Haftada 3-5 gün spor)", "Çok Hareketli (Haftada 6-7 gün ağır spor)"])
     st.divider()
     st.success("**Geliştirici: İsmail Orhan**")
 
-# 3. Ana Panel Başlığı
-st.markdown(f"<h1 style='text-align: center; color: #E63946;'>🧬 Profesyonel Performans Analizi</h1>", unsafe_allow_html=True)
-st.markdown(f"<p style='text-align: center;'>Hoş geldiniz! İşte <b>{hedef}</b> hedefiniz için analizleriniz:</p>", unsafe_allow_html=True)
+# --- ANA EKRAN TASARIMI ---
+st.markdown(f"<h1 style='text-align: center; color: #E63946;'>🏥 Profesyonel Sağlık Paneli</h1>", unsafe_allow_html=True)
+st.write(f"Hoş geldin! Bilgilerini sol taraftaki menüden güncelleyebilirsin.")
+st.divider()
 
-# 4. Hesaplama Motoru (Hatasız Formüller)
-# BMR
+# --- HESAPLAMA MOTORU (HATASIZ FORMÜLLER) ---
+
+# 1. Bazal Metabolizma (BMR)
 if cinsiyet == "Erkek":
     bmr = (10 * kilo) + (6.25 * boy) - (5 * yas) + 5
-    # Yağ Oranı Tahmini (Navy Formülü Basitleştirilmiş)
-    yag_orani = 495 / (1.0324 - 0.19077 * math.log10(bel - boyun) + 0.15456 * math.log10(boy)) - 450
+    ideal_kilo = 50 + 2.3 * ((boy / 2.54) - 60)
 else:
     bmr = (10 * kilo) + (6.25 * boy) - (5 * yas) - 161
-    yag_orani = 495 / (1.29579 - 0.35004 * math.log10(bel - boyun) + 0.22100 * math.log10(boy)) - 450
+    ideal_kilo = 45.5 + 2.3 * ((boy / 2.54) - 60)
 
-# TDEE
-akt_kat = {"Hareketsiz": 1.2, "Az Hareketli": 1.375, "Orta Hareketli": 1.55, "Çok Hareketli": 1.725, "Profesyonel": 1.9}
-tdee = bmr * akt_kat[aktivite]
+# 2. TDEE (Günlük Toplam Harcama)
+akt_harita = {"Masa Başı / Hareketsiz": 1.2, "Az Hareketli (Haftada 1-3 gün spor)": 1.375, 
+              "Orta Hareketli (Haftada 3-5 gün spor)": 1.55, "Çok Hareketli (Haftada 6-7 gün ağır spor)": 1.725}
+tdee = bmr * akt_harita[aktivite]
 
-# Makrolar
+# 3. Hedef Kalori ve Makrolar
 if hedef == "Yağ Yakımı":
-    g_kalori = tdee - 500
-    p_g, k_g, y_g = (kilo * 2.0), ((g_kalori * 0.3) / 4), ((g_kalori * 0.25) / 9)
-elif hedef == "Kas Kütlesi (Bulk)":
-    g_kalori = tdee + 400
-    p_g, k_g, y_g = (kilo * 1.8), ((g_kalori * 0.5) / 4), ((g_kalori * 0.2) / 9)
+    alman_gereken_kalori = tdee - 500
+    protein_gr = kilo * 2.0  # Yağ yakarken kas korumak için yüksek protein
+elif hedef == "Kas Kütlesi Artışı":
+    alman_gereken_kalori = tdee + 400
+    protein_gr = kilo * 1.8
 else:
-    g_kalori = tdee
-    p_g, k_g, y_g = (kilo * 1.6), ((g_kalori * 0.4) / 4), ((g_kalori * 0.25) / 9)
+    alman_gereken_kalori = tdee
+    protein_gr = kilo * 1.6
 
-# 5. Sonuç Ekranı (Temiz Düzen)
-t1, t2, t3 = st.tabs(["📊 Metabolizma & Yağ", "🥩 Beslenme Programı", "🫀 Kalp & Sağlık"])
+# 4. Diğer Veriler
+vki = kilo / ((boy / 100) ** 2)
+su_ihtiyacı = kilo * 0.04
+max_nabiz = 220 - yas
 
-with t1:
-    col1, col2 = st.columns(2)
-    col1.metric("Bazal Metabolizma (BMR)", f"{bmr:.0f} kcal")
-    col2.metric("Günlük Harcama (TDEE)", f"{tdee:.0f} kcal")
+# --- SONUÇLARI GÖSTERME (SEKMELİ YAPI - MOBİL DOSTU) ---
+tab1, tab2, tab3 = st.tabs(["📊 Vücut & Kalori", "🥩 Beslenme / Protein", "🫀 Kalp & Sağlık"])
+
+with tab1:
+    st.subheader("Metabolik Analiz")
+    c1, c2 = st.columns(2)
+    c1.metric("Bazal Metabolizma", f"{bmr:.0f} kcal")
+    c2.metric("Günlük Harcama", f"{tdee:.0f} kcal")
     
-    st.write("---")
-    vki = kilo / ((boy/100)**2)
-    st.subheader(f"Vücut Kitle İndeksi: {vki:.1f}")
-    if vki < 25: st.success("Normal Kilodasınız")
-    elif vki < 30: st.warning("Fazla Kilolu")
-    else: st.error("Obezite Sınırı")
-    
-    st.info(f"Tahmini Vücut Yağ Oranı: %{max(yag_orani, 0):.1f}")
-
-with t2:
-    st.subheader(f"Günlük Makro İhtiyacı ({g_kalori:.0f} kcal)")
-    m1, m2, m3 = st.columns(3)
-    m1.error(f"🥩 Protein\n{p_g:.0f}g")
-    m2.success(f"🍞 Karb\n{k_g:.0f}g")
-    m3.warning(f"🥑 Yağ\n{yag_g:.0f}g")
+    st.info(f"🎯 **Hedefin İçin Alman Gereken:** {alman_gereken_kalori:.0f} Kalori")
     
     st.divider()
-    st.write(f"💧 **Günlük Su İhtiyacınız:** {kilo * 0.04:.1f} Litre")
+    st.write(f"**Vücut Kitle İndeksiniz (VKİ):** {vki:.1f}")
+    if vki < 18.5: st.warning("Durum: Zayıf")
+    elif vki < 25: st.success("Durum: İdeal")
+    elif vki < 30: st.info("Durum: Fazla Kilolu")
+    else: st.error("Durum: Obezite")
+    st.progress(min(vki / 40, 1.0))
 
-with t3:
-    max_n = 220 - yas
-    st.subheader("Kardiyo Hedefleri")
-    st.write(f"Maksimum Kalp Atış Hızınız: **{max_n} BPM**")
+with tab2:
+    st.subheader(f"Sporcu Beslenme Rehberi")
+    m1, m2 = st.columns(2)
+    m1.metric("Günlük Protein", f"{protein_gr:.0f} g", "Kas İnşası")
+    m2.metric("Günlük Su", f"{su_ihtiyacı:.1f} L", "Hidrasyon")
     
-    st.write("🎯 **Yağ Yakım Bölgesi:**", f"{max_n*0.6:.0f} - {max_n*0.7:.0f} BPM")
-    st.write("⚡ **Kondisyon Bölgesi:**", f"{max_n*0.75:.0f} - {max_n*0.85:.0f} BPM")
+    st.divider()
+    st.write("💡 **Beslenme Notu:**")
+    st.write(f"- Hedefin **{hedef}** olduğu için protein alımın kilonun **{protein_gr/kilo:.1f} katı** olarak ayarlandı.")
+    st.write(f"- İdeal kilon olan **{ideal_kilo:.1f} kg** hedefine ulaşmak için kalori takibi yapmalısın.")
+
+with tab3:
+    st.subheader("Kardiyo ve Kalp Sağlığı")
+    st.write(f"Maksimum Kalp Atış Hızınız: **{max_nabiz} BPM**")
     
-    if st.button("Kutlamayı Başlat!"):
+    st.write("🎯 **Antrenman Nabız Bölgeleri:**")
+    st.warning(f"🔥 Yağ Yakımı (%60-70): {max_nabiz*0.6:.0f} - {max_nabiz*0.7:.0f} BPM")
+    st.info(f"🏃 Kondisyon (%70-80): {max_nabiz*0.7:.0f} - {max_nabiz*0.8:.0f} BPM")
+    st.error(f"⚡ Maksimum Performans (%85+): {max_nabiz*0.85:.0f}+ BPM")
+    
+    if st.button("Tebrikler! Analizi Tamamla"):
         st.balloons()
